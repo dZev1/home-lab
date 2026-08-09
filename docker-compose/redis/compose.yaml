@@ -1,0 +1,6 @@
+services:
+  redis:
+    image: redis:alpine
+    container_name: redis-cache
+    command: redis-server --save "" --requirepass ${MY_PASSWORD}
+    restart: unless-stopped

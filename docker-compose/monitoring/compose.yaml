@@ -1,0 +1,64 @@
+services:
+  prometheus:
+    image: prom/prometheus:main
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - /home/dz/services/monitoring/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - proxy_net
+
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${USER_NAME}
+      - GF_SECURITY_ADMIN_PASSWORD=${USER_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://grafana.dezetin.com
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - proxy_net
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres-exporter
+    restart: unless-stopped
+    environment:
+      - DATA_SOURCE_URI=postgres:5432/character_gallery?sslmode=disable
+      - DATA_SOURCE_USER=${DB_USER}
+      - DATA_SOURCE_PASS=${DB_PASS}
+    networks:
+        - proxy_net
+        - dragored
+
+  node-exporter:
+    image: prom/node-exporter
+    container_name: node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    volumes:
+      - '/:/host:ro,rslave'
+    networks:
+      - proxy_net
+
+volumes:
+  prometheus-data:
+  grafana-storage:
+
+networks:
+  proxy_net:
+    external: true
+  dragored:
+    external: true

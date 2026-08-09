@@ -1,0 +1,20 @@
+services:
+  adguard-home:
+    image: adguard/adguardhome
+    container_name: adguard
+    restart: unless-stopped
+    networks:
+      - proxy_net
+    volumes:
+      - ./conf:/opt/adguardhome/conf
+      - ./work:/opt/adguardhome/work
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "784:784/udp"
+      - "853:853/udp"
+      - "3000:3000/tcp"
+
+networks:
+  proxy_net:
+    external: true

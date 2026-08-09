@@ -1,0 +1,36 @@
+services:
+  ddns-updater:
+    image: ghcr.io/qdm12/ddns-updater
+    container_name: ddns-updater
+    network_mode: bridge
+    ports:
+      - 8050:8000/tcp
+    volumes:
+      - ./data:/updater/data
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    environment:
+      - PERIOD=5m
+      - UPDATE_COOLDOWN_PERIOD=5m
+      
+      - PUBLICIP_STRATEGY=http
+      - PUBLICIP_HTTP_PROVIDERS=all
+      - PUBLICIPV4_HTTP_PROVIDERS=all
+      
+      - HTTP_TIMEOUT=15s
+
+      - LISTENING_ADDRESS=:8000
+      - ROOT_URL=/
+
+      - BACKUP_PERIOD=0 # 0 to disable
+      - BACKUP_DIRECTORY=/updater/data
+
+      - LOG_LEVEL=info
+      - LOG_CALLER=hidden
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "https://1.1.1.1"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+    restart: always

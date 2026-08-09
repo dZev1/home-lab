@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: arm64v8/postgres:18.4-alpine3.23
+    container_name: postgres-server
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: ${USER_NAME}
+      POSTGRES_PASSWORD: ${USER_PASS}
+    volumes:
+      - ./data:/var/lib/postgresql
+    networks:
+      - dragored
+
+networks:
+  dragored:
+    external: true

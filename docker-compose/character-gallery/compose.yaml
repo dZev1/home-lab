@@ -1,0 +1,17 @@
+services:
+  character-gallery-api:
+    image: character-gallery-api:latest
+    container_name: character-gallery-api
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgres://${DBUSER}:${DBPASS}@postgres:5432/character_gallery
+      - REDIS_URL=redis://:${REDISPASS}@redis:6379/0
+    networks:
+      - dragored
+      - proxy_net
+
+networks:
+  dragored:
+    external: true
+  proxy_net:
+    external: true
