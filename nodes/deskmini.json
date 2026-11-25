@@ -16,6 +16,68 @@
     "OpenSSH",
     "UFW Firewall"
   ],
-  "systemd_timers": [],
-  "docker_containers": []
+  "systemd_timers": [
+    {
+      "name": "homelab-docs",
+      "schedule": "*-*-* 04:00:00",
+      "description": "Daily Home Lab inventory sync",
+      "enabled": "enabled"
+    }
+  ],
+  "docker_containers": [
+    {
+      "service": "dreamy_meitner",
+      "container_name": "dreamy_meitner",
+      "project": "",
+      "image": "hello-world",
+      "status": "exited",
+      "networks": [
+        "bridge"
+      ],
+      "ports": [],
+      "restart": "no"
+    },
+    {
+      "service": "node-exporter",
+      "container_name": "node-exporter",
+      "project": "monitoring",
+      "image": "prom/node-exporter",
+      "status": "running",
+      "networks": [
+        "monitoring_default"
+      ],
+      "ports": [
+        "9100:9100/tcp"
+      ],
+      "restart": "unless-stopped"
+    },
+    {
+      "service": "postgres",
+      "container_name": "postgres",
+      "project": "postgres",
+      "image": "postgres:18.4-alpine3.23",
+      "status": "running",
+      "networks": [
+        "outerwilds"
+      ],
+      "ports": [
+        "5432:5432/tcp"
+      ],
+      "restart": "unless-stopped"
+    },
+    {
+      "service": "redis",
+      "container_name": "redis-cache",
+      "project": "redis",
+      "image": "redis:alpine",
+      "status": "running",
+      "networks": [
+        "outerwilds"
+      ],
+      "ports": [
+        "6379:6379/tcp"
+      ],
+      "restart": "unless-stopped"
+    }
+  ]
 }
