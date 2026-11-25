@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "node": "deskmini",
+  "role": "Backups and Minecraft",
+  "system": {
+    "os": "Debian GNU/Linux 13 (trixie)",
+    "kernel": "6.12.116+deb13-amd64",
+    "arch": "x86_64",
+    "cpu": "Intel(R) Celeron(R) CPU G3950 @ 3.00GHz",
+    "cpu_cores": 2,
+    "ram_gb": 11.4,
+    "root_disk_gb": 431.5
+  },
+  "host_services": [
+    "Docker",
+    "OpenSSH",
+    "UFW Firewall"
+  ],
+  "systemd_timers": [],
+  "docker_containers": []
+}
