@@ -26,7 +26,7 @@ This keeps the attack surface small: only those services that need exposure are 
 
 | Service                          | Purpose                             | Stack                                    | Docs                                                   |
 | -------------------------------- | ----------------------------------- | ---------------------------------------- | ------------------------------------------------------ |
-| character-gallery-api            | RPG characters CRUD API             | Go, Postgres, Redis, JWT, GitHub Actions | [repo](https://www.github.com/dZev1/character-gallery) |
+| character-gallery-api            | RPG characters CRUD API             | Go, Postgres, Redis, JWT, GitHub Actions | [repo](https://www.github.com/dZev1/character-gallery-api) |
 | adguard                          | DNS + ad blocking                   | AdguardHome, DoQ                         | [docs](docs/networking.md)                             |
 | nginx                            | Reverse proxy                       | nginx                                    | [docs](docs/networking.md)                             |
 | ddns-updater                     | Dynamic DNS for my minecraft server | ddns-updater                             | [docs](docs/networking.md)                             |
