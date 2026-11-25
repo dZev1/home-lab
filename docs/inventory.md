@@ -7,11 +7,11 @@
 | Metric | Count |
 | ------ | ----- |
 | Physical Nodes | 4 (3 synced live) |
-| Docker Services | 16 |
-| Docker Networks | 7 (`bridge`, `default (bridge)`, `dragored`, `forgejo_default`, `kavita_default`, `monitoring_default`, `proxy_net`) |
+| Docker Services | 20 |
+| Docker Networks | 8 (`bridge`, `default (bridge)`, `dragored`, `forgejo_default`, `kavita_default`, `monitoring_default`, `outerwilds`, `proxy_net`) |
 | NGINX Reverse Proxy Routes | 4 |
 | Prometheus Scrape Jobs | 4 (`30s` interval) |
-| Custom Systemd Timers | 1 |
+| Custom Systemd Timers | 2 |
 
 ## Nodes & Hardware
 
@@ -27,9 +27,20 @@
 ```mermaid
 flowchart LR
   subgraph node_deskmini["Asrock Deskmini 110 — Debian GNU/Linux 13 (trixie)"]
-    hs_deskmini_0["host: Docker"]
+    net_deskmini_bridge{{"bridge"}}
+    net_deskmini_monitoring_default{{"monitoring_default"}}
+    net_deskmini_outerwilds{{"outerwilds"}}
+    svc_deskmini_dreamy_meitner["dreamy_meitner"]
+    svc_deskmini_dreamy_meitner --- net_deskmini_bridge
+    svc_deskmini_node_exporter["node-exporter"]
+    svc_deskmini_node_exporter --- net_deskmini_monitoring_default
+    svc_deskmini_postgres["postgres"]
+    svc_deskmini_postgres --- net_deskmini_outerwilds
+    svc_deskmini_redis["redis (redis-cache)"]
+    svc_deskmini_redis --- net_deskmini_outerwilds
     hs_deskmini_1["host: OpenSSH"]
     hs_deskmini_2["host: UFW Firewall"]
+    tm_deskmini_0["timer: homelab-docs (*-*-* 04:00:00)"]
   end
   subgraph node_mac_mini["Mac Mini — Debian GNU/Linux 13 (trixie)"]
     net_mac-mini_forgejo_default{{"forgejo_default"}}
@@ -89,7 +100,7 @@ flowchart LR
   svc_rpi4_nginx -. "HTTPS grafana.domain" .-> svc_rpi4_grafana
   svc_rpi4_nginx -. "HTTPS prometheus.domain" .-> svc_rpi4_prometheus
   svc_rpi4_nginx -. "HTTPS kavita.domain" .-> svc_mac-mini_kavita
-  svc_rpi4_prometheus -. "scrape" .-> svc_mac-mini_node_exporter
+  svc_rpi4_prometheus -. "scrape" .-> svc_deskmini_node_exporter
   svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_character_gallery_api
   svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_postgres_exporter
 ```
@@ -98,6 +109,10 @@ flowchart LR
 
 | Node | Service | Container | Image | Networks | Exposed Ports | Restart | Source |
 | ---- | ------- | --------- | ----- | -------- | ------------- | ------- | ------ |
+| `deskmini` | `dreamy_meitner` | `dreamy_meitner` | `hello-world` | `bridge` | — | `no` | live (`exited`) |
+| `deskmini` | `node-exporter` | `node-exporter` | `prom/node-exporter` | `monitoring_default` | `9100:9100/tcp` | `unless-stopped` | live (`running`) |
+| `deskmini` | `postgres` | `postgres` | `postgres:18.4-alpine3.23` | `outerwilds` | `5432:5432/tcp` | `unless-stopped` | live (`running`) |
+| `deskmini` | `redis` | `redis-cache` | `redis:alpine` | `outerwilds` | `6379:6379/tcp` | `unless-stopped` | live (`running`) |
 | `mac-mini` | `forgejo` | `forgejo` | `codeberg.org/forgejo/forgejo:15` | `forgejo_default` | `222:22/tcp`, `3000:3000/tcp` | `always` | live (`running`) |
 | `mac-mini` | `kavita` | `kavita-server` | `jvmilazz0/kavita:latest` | `kavita_default` | `5000:5000/tcp` | `unless-stopped` | live (`running`) |
 | `mac-mini` | `node-exporter` | `node-exporter` | `prom/node-exporter` | `monitoring_default` | `9100:9100/tcp` | `unless-stopped` | live (`running`) |
@@ -137,4 +152,5 @@ flowchart LR
 
 | Node | Timer | Schedule | Enabled | Description |
 | ---- | ----- | -------- | ------- | ----------- |
+| `deskmini` | `homelab-docs` | `*-*-* 04:00:00` | `enabled` | Daily Home Lab inventory sync |
 | `mac-mini` | `homelab-docs` | `*-*-* 04:00:00` | `enabled` | Daily Home Lab inventory sync |

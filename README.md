@@ -36,9 +36,20 @@ This keeps the attack surface small: only those services that need exposure are 
 ```mermaid
 flowchart LR
   subgraph node_deskmini["Asrock Deskmini 110 — Debian GNU/Linux 13 (trixie)"]
-    hs_deskmini_0["host: Docker"]
+    net_deskmini_bridge{{"bridge"}}
+    net_deskmini_monitoring_default{{"monitoring_default"}}
+    net_deskmini_outerwilds{{"outerwilds"}}
+    svc_deskmini_dreamy_meitner["dreamy_meitner"]
+    svc_deskmini_dreamy_meitner --- net_deskmini_bridge
+    svc_deskmini_node_exporter["node-exporter"]
+    svc_deskmini_node_exporter --- net_deskmini_monitoring_default
+    svc_deskmini_postgres["postgres"]
+    svc_deskmini_postgres --- net_deskmini_outerwilds
+    svc_deskmini_redis["redis (redis-cache)"]
+    svc_deskmini_redis --- net_deskmini_outerwilds
     hs_deskmini_1["host: OpenSSH"]
     hs_deskmini_2["host: UFW Firewall"]
+    tm_deskmini_0["timer: homelab-docs (*-*-* 04:00:00)"]
   end
   subgraph node_mac_mini["Mac Mini — Debian GNU/Linux 13 (trixie)"]
     net_mac-mini_forgejo_default{{"forgejo_default"}}
@@ -98,7 +109,7 @@ flowchart LR
   svc_rpi4_nginx -. "HTTPS grafana.domain" .-> svc_rpi4_grafana
   svc_rpi4_nginx -. "HTTPS prometheus.domain" .-> svc_rpi4_prometheus
   svc_rpi4_nginx -. "HTTPS kavita.domain" .-> svc_mac-mini_kavita
-  svc_rpi4_prometheus -. "scrape" .-> svc_mac-mini_node_exporter
+  svc_rpi4_prometheus -. "scrape" .-> svc_deskmini_node_exporter
   svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_character_gallery_api
   svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_postgres_exporter
 ```
@@ -111,6 +122,10 @@ flowchart LR
 <!-- AUTO:SERVICES:START -->
 | Node | Service | Image / Stack | Networks | Purpose | Docs |
 | ---- | ------- | ------------- | -------- | ------- | ---- |
+| `deskmini` | `dreamy_meitner` | `hello-world` | `bridge` | — | — |
+| `deskmini` | `node-exporter` | `prom/node-exporter` | `monitoring_default` | Host OS & hardware metrics exporter | [docs](docs/monitoring.md) |
+| `deskmini` | `postgres` | `postgres:18.4-alpine3.23` | `outerwilds` | Primary relational database (API & n8n) | [compose](docker-compose/postgres/compose.yaml) |
+| `deskmini` | `redis` | `redis:alpine` | `outerwilds` | In-memory cache & rate limiting | [compose](docker-compose/redis/compose.yaml) |
 | `mac-mini` | `forgejo` | `codeberg.org/forgejo/forgejo:15` | `forgejo_default` | Self-hosted Git forge | — |
 | `mac-mini` | `kavita` | `jvmilazz0/kavita:latest` | `kavita_default` | Self-hosted e-book & university notes reader | [compose](docker-compose/kavita/compose.yaml) |
 | `mac-mini` | `node-exporter` | `prom/node-exporter` | `monitoring_default` | Host OS & hardware metrics exporter | [docs](docs/monitoring.md) |
