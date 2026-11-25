@@ -41,7 +41,15 @@ flowchart LR
     hs_deskmini_2["host: UFW Firewall"]
   end
   subgraph node_mac_mini["Mac Mini — Debian GNU/Linux 13 (trixie)"]
-    hs_mac-mini_0["host: Docker"]
+    net_mac-mini_forgejo_default{{"forgejo_default"}}
+    net_mac-mini_kavita_default{{"kavita_default"}}
+    net_mac-mini_monitoring_default{{"monitoring_default"}}
+    svc_mac-mini_forgejo["forgejo"]
+    svc_mac-mini_forgejo --- net_mac-mini_forgejo_default
+    svc_mac-mini_kavita["kavita (kavita-server)"]
+    svc_mac-mini_kavita --- net_mac-mini_kavita_default
+    svc_mac-mini_node_exporter["node-exporter"]
+    svc_mac-mini_node_exporter --- net_mac-mini_monitoring_default
     hs_mac-mini_1["host: Jellyfin"]
     hs_mac-mini_2["host: OpenSSH"]
     hs_mac-mini_3["host: WireGuard"]
@@ -89,8 +97,8 @@ flowchart LR
   svc_rpi4_nginx -. "HTTPS adguard.domain" .-> svc_rpi4_adguard_home
   svc_rpi4_nginx -. "HTTPS grafana.domain" .-> svc_rpi4_grafana
   svc_rpi4_nginx -. "HTTPS prometheus.domain" .-> svc_rpi4_prometheus
-  svc_rpi4_nginx -. "HTTPS kavita.domain" .-> svc_rpi4_kavita
-  svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_node_exporter
+  svc_rpi4_nginx -. "HTTPS kavita.domain" .-> svc_mac-mini_kavita
+  svc_rpi4_prometheus -. "scrape" .-> svc_mac-mini_node_exporter
   svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_character_gallery_api
   svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_postgres_exporter
 ```
@@ -103,6 +111,9 @@ flowchart LR
 <!-- AUTO:SERVICES:START -->
 | Node | Service | Image / Stack | Networks | Purpose | Docs |
 | ---- | ------- | ------------- | -------- | ------- | ---- |
+| `mac-mini` | `forgejo` | `codeberg.org/forgejo/forgejo:15` | `forgejo_default` | Self-hosted Git forge | — |
+| `mac-mini` | `kavita` | `jvmilazz0/kavita:latest` | `kavita_default` | Self-hosted e-book & university notes reader | [compose](docker-compose/kavita/compose.yaml) |
+| `mac-mini` | `node-exporter` | `prom/node-exporter` | `monitoring_default` | Host OS & hardware metrics exporter | [docs](docs/monitoring.md) |
 | `rpi4` | `adguard-home` | `adguard/adguardhome` | `proxy_net` | Internal DNS + ad blocking (DoQ) | [docs](docs/networking.md) |
 | `rpi4` | `character-gallery-api` | `character-gallery-api:latest` | `dragored`, `proxy_net` | RPG characters CRUD API (Go) | [repo](https://github.com/dZev1/character-gallery-api) |
 | `rpi4` | `cloudflared` | `cloudflare/cloudflared:latest` | `dragored` | Selective public exposure without open ports | [docs](docs/networking.md) |

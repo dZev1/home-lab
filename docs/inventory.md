@@ -7,8 +7,8 @@
 | Metric | Count |
 | ------ | ----- |
 | Physical Nodes | 4 (3 synced live) |
-| Docker Services | 13 |
-| Docker Networks | 4 (`bridge`, `default (bridge)`, `dragored`, `proxy_net`) |
+| Docker Services | 16 |
+| Docker Networks | 7 (`bridge`, `default (bridge)`, `dragored`, `forgejo_default`, `kavita_default`, `monitoring_default`, `proxy_net`) |
 | NGINX Reverse Proxy Routes | 4 |
 | Prometheus Scrape Jobs | 4 (`30s` interval) |
 | Custom Systemd Timers | 1 |
@@ -32,7 +32,15 @@ flowchart LR
     hs_deskmini_2["host: UFW Firewall"]
   end
   subgraph node_mac_mini["Mac Mini — Debian GNU/Linux 13 (trixie)"]
-    hs_mac-mini_0["host: Docker"]
+    net_mac-mini_forgejo_default{{"forgejo_default"}}
+    net_mac-mini_kavita_default{{"kavita_default"}}
+    net_mac-mini_monitoring_default{{"monitoring_default"}}
+    svc_mac-mini_forgejo["forgejo"]
+    svc_mac-mini_forgejo --- net_mac-mini_forgejo_default
+    svc_mac-mini_kavita["kavita (kavita-server)"]
+    svc_mac-mini_kavita --- net_mac-mini_kavita_default
+    svc_mac-mini_node_exporter["node-exporter"]
+    svc_mac-mini_node_exporter --- net_mac-mini_monitoring_default
     hs_mac-mini_1["host: Jellyfin"]
     hs_mac-mini_2["host: OpenSSH"]
     hs_mac-mini_3["host: WireGuard"]
@@ -80,8 +88,8 @@ flowchart LR
   svc_rpi4_nginx -. "HTTPS adguard.domain" .-> svc_rpi4_adguard_home
   svc_rpi4_nginx -. "HTTPS grafana.domain" .-> svc_rpi4_grafana
   svc_rpi4_nginx -. "HTTPS prometheus.domain" .-> svc_rpi4_prometheus
-  svc_rpi4_nginx -. "HTTPS kavita.domain" .-> svc_rpi4_kavita
-  svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_node_exporter
+  svc_rpi4_nginx -. "HTTPS kavita.domain" .-> svc_mac-mini_kavita
+  svc_rpi4_prometheus -. "scrape" .-> svc_mac-mini_node_exporter
   svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_character_gallery_api
   svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_postgres_exporter
 ```
@@ -90,6 +98,9 @@ flowchart LR
 
 | Node | Service | Container | Image | Networks | Exposed Ports | Restart | Source |
 | ---- | ------- | --------- | ----- | -------- | ------------- | ------- | ------ |
+| `mac-mini` | `forgejo` | `forgejo` | `codeberg.org/forgejo/forgejo:15` | `forgejo_default` | `222:22/tcp`, `3000:3000/tcp` | `always` | live (`running`) |
+| `mac-mini` | `kavita` | `kavita-server` | `jvmilazz0/kavita:latest` | `kavita_default` | `5000:5000/tcp` | `unless-stopped` | live (`running`) |
+| `mac-mini` | `node-exporter` | `node-exporter` | `prom/node-exporter` | `monitoring_default` | `9100:9100/tcp` | `unless-stopped` | live (`running`) |
 | `rpi4` | `adguard-home` | `adguard` | `adguard/adguardhome` | `proxy_net` | `53:53/tcp`, `53:53/udp`, `784:784/udp`, `853:853/udp`, `3000:3000/tcp` | `unless-stopped` | [compose](../docker-compose/adguard/compose.yaml) |
 | `rpi4` | `character-gallery-api` | `character-gallery-api` | `character-gallery-api:latest` | `dragored`, `proxy_net` | — | `unless-stopped` | [compose](../docker-compose/character-gallery/compose.yaml) |
 | `rpi4` | `cloudflared` | `cloudflare-tunnel` | `cloudflare/cloudflared:latest` | `dragored` | — | `unless-stopped` | [compose](../docker-compose/cloudflared/compose.yaml) |
