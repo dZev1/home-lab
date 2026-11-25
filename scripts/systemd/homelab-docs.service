@@ -1,0 +1,13 @@
+[Unit]
+Description=Collect Home Lab node inventory and push to GitHub
+Wants=network-online.target
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+# Replace <USER> and customize NODE_NAME / NODE_ROLE per node
+User=<USER>
+WorkingDirectory=/home/<USER>/home-lab
+Environment="NODE_NAME=mac-mini"
+Environment="NODE_ROLE=Media Server"
+ExecStart=/home/<USER>/home-lab/scripts/sync_node.sh

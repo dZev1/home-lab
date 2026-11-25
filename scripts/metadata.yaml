@@ -1,0 +1,72 @@
+# Optional human-readable metadata for auto-generated docs.
+# Nodes and containers discovered via `nodes/*.json` or `docker-compose/*/compose.yaml`
+# are included automatically even if not listed here.
+# You can also override purpose/docs per container using Docker labels:
+#   homelab.purpose="My service description"
+#   homelab.docs="[docs](docs/networking.md)"
+
+nodes:
+  rpi4:
+    display_name: "Raspberry Pi 4 (4GB)"
+    role: "Networking, APIs, Observability & Automation"
+  deskmini:
+    display_name: "Asrock Deskmini 110"
+    role: "Minecraft Server & Cross-Server Backups"
+  mac-mini:
+    display_name: "Mac Mini"
+    role: "Media Server & Self-Hosted Git (Forgejo, Jellyfin, Kavita)"
+
+services:
+  adguard-home:
+    purpose: "Internal DNS + ad blocking (DoQ)"
+    docs: "[docs](docs/networking.md)"
+  character-gallery-api:
+    purpose: "RPG characters CRUD API (Go)"
+    docs: "[repo](https://github.com/dZev1/character-gallery-api)"
+  cloudflared:
+    purpose: "Selective public exposure without open ports"
+    docs: "[docs](docs/networking.md)"
+  ddns-updater:
+    purpose: "Dynamic DNS updater for Minecraft server"
+    docs: "[docs](docs/networking.md)"
+  forgejo:
+    purpose: "Self-hosted Git forge"
+    docs: "—"
+  grafana:
+    purpose: "Dashboards & observability UI"
+    docs: "[docs](docs/monitoring.md)"
+  jellyfin:
+    purpose: "Self-hosted media streaming server"
+    docs: "—"
+  kavita:
+    purpose: "Self-hosted e-book & university notes reader"
+    docs: "[compose](docker-compose/kavita/compose.yaml)"
+  n8n:
+    purpose: "Workflow automation"
+    docs: "[compose](docker-compose/n8n/compose.yaml)"
+  nginx:
+    purpose: "TLS reverse proxy for internal services"
+    docs: "[docs](docs/networking.md)"
+  node-exporter:
+    purpose: "Host OS & hardware metrics exporter"
+    docs: "[docs](docs/monitoring.md)"
+  postgres:
+    purpose: "Primary relational database (API & n8n)"
+    docs: "[compose](docker-compose/postgres/compose.yaml)"
+  postgres-exporter:
+    purpose: "PostgreSQL metrics exporter for Prometheus"
+    docs: "[docs](docs/monitoring.md)"
+  prometheus:
+    purpose: "Time-series metrics collection"
+    docs: "[docs](docs/monitoring.md)"
+  redis:
+    purpose: "In-memory cache & rate limiting"
+    docs: "[compose](docker-compose/redis/compose.yaml)"
+
+# Non-containerized workloads running directly on Linux hosts (shown until discovered live)
+host_workloads:
+  - name: "minecraft-server"
+    node: "deskmini"
+    stack: "Fabric, Debian (systemd backups)"
+    purpose: "Private Minecraft server for friends"
+    docs: "[docs](docs/minecraft-server.md)"

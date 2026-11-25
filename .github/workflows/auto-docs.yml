@@ -1,0 +1,56 @@
+name: Auto-generate Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "nodes/**"
+      - "docker-compose/**"
+      - "scripts/**"
+  pull_request:
+    paths:
+      - "nodes/**"
+      - "docker-compose/**"
+      - "scripts/**"
+      - "README.md"
+      - "docs/inventory.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Check docs on pull request
+        if: github.event_name == 'pull_request'
+        run: python3 scripts/generate_docs.py --check
+
+      - name: Generate docs
+        if: github.event_name != 'pull_request'
+        run: python3 scripts/generate_docs.py
+
+      - name: Commit updated docs
+        if: github.event_name != 'pull_request'
+        run: |
+          if git diff --quiet README.md docs/inventory.md; then
+            echo "No documentation changes detected."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md docs/inventory.md
+          git commit -m "docs: auto-update homelab inventory and topology [skip ci]"
+          git push
