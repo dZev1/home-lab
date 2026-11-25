@@ -6,7 +6,7 @@
 
 | Metric | Count |
 | ------ | ----- |
-| Physical Nodes | 3 (1 synced live) |
+| Physical Nodes | 4 (2 synced live) |
 | Docker Services | 13 |
 | Docker Networks | 4 (`bridge`, `default (bridge)`, `dragored`, `proxy_net`) |
 | NGINX Reverse Proxy Routes | 4 |
@@ -19,6 +19,7 @@
 | ---- | ---- | --------- | -------- | ------------- |
 | **Asrock Deskmini 110** (`deskmini`) | Minecraft Server & Cross-Server Backups | `Debian` *(pending sync)* | — | — |
 | **Mac Mini** (`mac-mini`) | Media Server | `Debian GNU/Linux 13 (trixie)` (`x86_64`) | 4c · 7.6 GB RAM · 210.3 GB disk | `Docker`, `Jellyfin`, `OpenSSH`, `WireGuard` |
+| **rpi-4** (`rpi-4`) | Networking node | `Debian GNU/Linux 13 (trixie)` (`aarch64`) | 4c · 3.7 GB RAM · 916.3 GB disk | `Docker`, `OpenSSH`, `Tailscale` |
 | **Raspberry Pi 4 (4GB)** (`rpi4`) | Networking, APIs, Observability & Automation | `Debian` *(pending sync)* | — | — |
 
 ## Network & Service Topology
@@ -34,6 +35,11 @@ flowchart LR
     hs_mac-mini_2["host: OpenSSH"]
     hs_mac-mini_3["host: WireGuard"]
     tm_mac-mini_0["timer: homelab-docs (*-*-* 04:00:00)"]
+  end
+  subgraph node_rpi_4["rpi-4 — Debian GNU/Linux 13 (trixie)"]
+    hs_rpi-4_0["host: Docker"]
+    hs_rpi-4_1["host: OpenSSH"]
+    hs_rpi-4_2["host: Tailscale"]
   end
   subgraph node_rpi4["Raspberry Pi 4 (4GB) (Debian)"]
     net_rpi4_bridge{{"bridge"}}
