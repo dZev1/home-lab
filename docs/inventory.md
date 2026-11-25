@@ -6,19 +6,19 @@
 
 | Metric | Count |
 | ------ | ----- |
-| Physical Nodes | 3 (0 synced live) |
+| Physical Nodes | 3 (1 synced live) |
 | Docker Services | 13 |
 | Docker Networks | 4 (`bridge`, `default (bridge)`, `dragored`, `proxy_net`) |
 | NGINX Reverse Proxy Routes | 4 |
 | Prometheus Scrape Jobs | 4 (`30s` interval) |
-| Custom Systemd Timers | 0 |
+| Custom Systemd Timers | 1 |
 
 ## Nodes & Hardware
 
 | Node | Role | OS / Arch | Hardware | Host Services |
 | ---- | ---- | --------- | -------- | ------------- |
 | **Asrock Deskmini 110** (`deskmini`) | Minecraft Server & Cross-Server Backups | `Debian` *(pending sync)* | — | — |
-| **Mac Mini** (`mac-mini`) | Media Server & Self-Hosted Git (Forgejo, Jellyfin, Kavita) | `Debian` *(pending sync)* | — | — |
+| **Mac Mini** (`mac-mini`) | Media Server | `Debian GNU/Linux 13 (trixie)` (`x86_64`) | 4c · 7.6 GB RAM · 210.3 GB disk | `Docker`, `Jellyfin`, `OpenSSH`, `WireGuard` |
 | **Raspberry Pi 4 (4GB)** (`rpi4`) | Networking, APIs, Observability & Automation | `Debian` *(pending sync)* | — | — |
 
 ## Network & Service Topology
@@ -28,8 +28,12 @@ flowchart LR
   subgraph node_deskmini["Asrock Deskmini 110 (Debian)"]
     info_deskmini["Minecraft Server & Cross-Server Backups"]
   end
-  subgraph node_mac_mini["Mac Mini (Debian)"]
-    info_mac_mini["Media Server & Self-Hosted Git (Forgejo, Jellyfin, Kavita)"]
+  subgraph node_mac_mini["Mac Mini — Debian GNU/Linux 13 (trixie)"]
+    hs_mac-mini_0["host: Docker"]
+    hs_mac-mini_1["host: Jellyfin"]
+    hs_mac-mini_2["host: OpenSSH"]
+    hs_mac-mini_3["host: WireGuard"]
+    tm_mac-mini_0["timer: homelab-docs (*-*-* 04:00:00)"]
   end
   subgraph node_rpi4["Raspberry Pi 4 (4GB) (Debian)"]
     net_rpi4_bridge{{"bridge"}}
@@ -109,3 +113,9 @@ flowchart LR
 | `node-exporter` | `node-exporter:9100` |
 | `character_gallery` | `character-gallery-api:8080` |
 | `postgres-db` | `postgres-exporter:9187` |
+
+## Custom Systemd Timers
+
+| Node | Timer | Schedule | Enabled | Description |
+| ---- | ----- | -------- | ------- | ----------- |
+| `mac-mini` | `homelab-docs` | `*-*-* 04:00:00` | `enabled` | Daily Home Lab inventory sync |
