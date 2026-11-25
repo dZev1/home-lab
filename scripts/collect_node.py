@@ -179,7 +179,10 @@ def sanitize_ports(port_bindings: dict[str, Any] | None) -> list[str]:
     return sorted(ports)
 
 
-def get_docker_containers() -> list[dict[str, Any]]:
+def get_docker_containers(
+    exclude_projects: set[str],
+    exclude_services: set[str],
+) -> list[dict[str, Any]]:
     if not shutil.which("docker"):
         return []
 
@@ -200,6 +203,7 @@ def get_docker_containers() -> list[dict[str, Any]]:
     except json.JSONDecodeError:
         return []
 
+    generic_names = {"server", "app", "web", "service", "main"}
     containers: list[dict[str, Any]] = []
     for item in raw_items:
         cfg = item.get("Config") or {}
@@ -208,9 +212,19 @@ def get_docker_containers() -> list[dict[str, Any]]:
         state = item.get("State") or {}
         labels = cfg.get("Labels") or {}
 
+        if str(labels.get("homelab.hide", "")).lower() in ("1", "true", "yes"):
+            continue
+
         name = str(item.get("Name", "")).lstrip("/")
-        compose_service = labels.get("com.docker.compose.service") or name
-        compose_project = labels.get("com.docker.compose.project") or ""
+        raw_service = str(labels.get("com.docker.compose.service") or name)
+        compose_service = name if raw_service.lower() in generic_names and name else raw_service
+        compose_project = str(labels.get("com.docker.compose.project") or "")
+
+        if compose_project.lower() in exclude_projects:
+            continue
+        if compose_service.lower() in exclude_services or name.lower() in exclude_services:
+            continue
+
         image = str(cfg.get("Image", "unknown"))
 
         networks = sorted((net_settings.get("Networks") or {}).keys())
@@ -243,7 +257,22 @@ def get_docker_containers() -> list[dict[str, Any]]:
     return sorted(containers, key=lambda c: (c["service"].lower(), c["container_name"].lower()))
 
 
-def collect_snapshot(node_name: str, role: str) -> dict[str, Any]:
+def parse_csv_set(values: list[str] | None) -> set[str]:
+    result: set[str] = set()
+    for val in values or []:
+        for item in val.split(","):
+            cleaned = item.strip().lower()
+            if cleaned:
+                result.add(cleaned)
+    return result
+
+
+def collect_snapshot(
+    node_name: str,
+    role: str,
+    exclude_projects: set[str],
+    exclude_services: set[str],
+) -> dict[str, Any]:
     return {
         "schema_version": 1,
         "node": node_name,
@@ -259,7 +288,7 @@ def collect_snapshot(node_name: str, role: str) -> dict[str, Any]:
         },
         "host_services": get_active_host_services(),
         "systemd_timers": get_custom_systemd_timers(),
-        "docker_containers": get_docker_containers(),
+        "docker_containers": get_docker_containers(exclude_projects, exclude_services),
     }
 
 
@@ -276,6 +305,18 @@ def main() -> int:
         help="Short description of this node's role (e.g., 'Media Server', 'Core Services').",
     )
     parser.add_argument(
+        "--exclude-project",
+        action="append",
+        default=[],
+        help="Docker Compose project name(s) to exclude (repeatable or comma-separated).",
+    )
+    parser.add_argument(
+        "--exclude-service",
+        action="append",
+        default=[],
+        help="Service or container name(s) to exclude (repeatable or comma-separated).",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print collected JSON to stdout without writing any file.",
@@ -283,7 +324,9 @@ def main() -> int:
     args = parser.parse_args()
 
     safe_name = re.sub(r"[^a-zA-Z0-9._-]", "-", args.node_name.strip().lower())
-    snapshot = collect_snapshot(safe_name, args.role.strip())
+    exclude_projects = parse_csv_set(args.exclude_project)
+    exclude_services = parse_csv_set(args.exclude_service)
+    snapshot = collect_snapshot(safe_name, args.role.strip(), exclude_projects, exclude_services)
     rendered = json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n"
 
     if args.dry_run:

@@ -3,15 +3,19 @@
 # GitHub Actions will then aggregate all nodes and regenerate README.md + docs/inventory.md.
 #
 # Optional environment variables:
-#   NODE_NAME   Logical node name (defaults to `hostname`)
-#   NODE_ROLE   Short role label (e.g., "Media Server", "Core Services", "Game & Backup Server")
-#   GIT_BRANCH  Target branch (defaults to "main")
+#   NODE_NAME         Logical node name (defaults to `hostname`)
+#   NODE_ROLE         Short role label (e.g., "Media Server", "Core Services")
+#   EXCLUDE_PROJECTS  Comma-separated Docker Compose project names to omit (e.g., "private-stack")
+#   EXCLUDE_SERVICES  Comma-separated service/container names to omit
+#   GIT_BRANCH        Target branch (defaults to "main")
 
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NODE_NAME="${NODE_NAME:-$(hostname)}"
 NODE_ROLE="${NODE_ROLE:-}"
+EXCLUDE_PROJECTS="${EXCLUDE_PROJECTS:-}"
+EXCLUDE_SERVICES="${EXCLUDE_SERVICES:-}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 
 cd "$REPO_DIR"
@@ -21,11 +25,12 @@ git fetch origin "$GIT_BRANCH"
 git pull --rebase --autostash origin "$GIT_BRANCH"
 
 # Collect node snapshot (zero secrets, allowlist-based)
-if [[ -n "$NODE_ROLE" ]]; then
-  python3 scripts/collect_node.py --node-name "$NODE_NAME" --role "$NODE_ROLE"
-else
-  python3 scripts/collect_node.py --node-name "$NODE_NAME"
-fi
+COLLECT_ARGS=(--node-name "$NODE_NAME")
+[[ -n "$NODE_ROLE" ]] && COLLECT_ARGS+=(--role "$NODE_ROLE")
+[[ -n "$EXCLUDE_PROJECTS" ]] && COLLECT_ARGS+=(--exclude-project "$EXCLUDE_PROJECTS")
+[[ -n "$EXCLUDE_SERVICES" ]] && COLLECT_ARGS+=(--exclude-service "$EXCLUDE_SERVICES")
+
+python3 scripts/collect_node.py "${COLLECT_ARGS[@]}"
 
 # Exit cleanly if nothing changed
 if git diff --quiet -- nodes/ && [[ -z "$(git ls-files --others --exclude-standard -- nodes/)" ]]; then

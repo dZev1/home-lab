@@ -5,9 +5,14 @@ After=network-online.target docker.service
 
 [Service]
 Type=oneshot
-# Replace <USER> and customize NODE_NAME / NODE_ROLE per node
+# Replace <USER> and customize NODE_NAME / NODE_ROLE / EXCLUDE_PROJECTS per node
 User=<USER>
+# Grants Docker socket access ONLY to this service without adding <USER> to the docker group
+# (comment out on nodes without Docker installed)
+SupplementaryGroups=docker
 WorkingDirectory=/home/<USER>/home-lab
 Environment="NODE_NAME=mac-mini"
 Environment="NODE_ROLE=Media Server"
+# Optional: comma-separated compose projects or container names to keep private
+# Environment="EXCLUDE_PROJECTS=private-stack"
 ExecStart=/home/<USER>/home-lab/scripts/sync_node.sh

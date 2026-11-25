@@ -158,12 +158,13 @@ def parse_node_snapshots(meta: dict[str, Any]) -> list[NodeSnapshot]:
         containers: list[ServiceEntry] = []
         for c in data.get("docker_containers") or []:
             svc_name = str(c.get("service") or c.get("container_name") or "unknown")
-            svc_meta = meta_services.get(svc_name, {})
+            container_name = str(c.get("container_name", svc_name))
+            svc_meta = meta_services.get(svc_name) or meta_services.get(container_name) or {}
             containers.append(
                 ServiceEntry(
                     name=svc_name,
                     node=node_key,
-                    container_name=str(c.get("container_name", svc_name)),
+                    container_name=container_name,
                     image=str(c.get("image", "unknown")),
                     networks=[str(n) for n in (c.get("networks") or ["default"])],
                     ports=[str(p) for p in (c.get("ports") or [])],
