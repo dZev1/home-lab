@@ -4,7 +4,7 @@
   "role": "Backups and Minecraft",
   "system": {
     "os": "Debian GNU/Linux 13 (trixie)",
-    "kernel": "6.12.116+deb13-amd64",
+    "kernel": "6.12.118+deb13-amd64",
     "arch": "x86_64",
     "cpu": "Intel(R) Celeron(R) CPU G3950 @ 3.00GHz",
     "cpu_cores": 2,
@@ -25,18 +25,6 @@
     }
   ],
   "docker_containers": [
-    {
-      "service": "dreamy_meitner",
-      "container_name": "dreamy_meitner",
-      "project": "",
-      "image": "hello-world",
-      "status": "exited",
-      "networks": [
-        "bridge"
-      ],
-      "ports": [],
-      "restart": "no"
-    },
     {
       "service": "node-exporter",
       "container_name": "node-exporter",
