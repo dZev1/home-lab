@@ -25,5 +25,49 @@
       "enabled": "enabled"
     }
   ],
-  "docker_containers": []
+  "docker_containers": [
+    {
+      "service": "forgejo",
+      "container_name": "forgejo",
+      "project": "forgejo",
+      "image": "codeberg.org/forgejo/forgejo:15",
+      "status": "running",
+      "networks": [
+        "forgejo_default"
+      ],
+      "ports": [
+        "222:22/tcp",
+        "3000:3000/tcp"
+      ],
+      "restart": "always"
+    },
+    {
+      "service": "kavita",
+      "container_name": "kavita-server",
+      "project": "kavita",
+      "image": "jvmilazz0/kavita:latest",
+      "status": "running",
+      "networks": [
+        "kavita_default"
+      ],
+      "ports": [
+        "5000:5000/tcp"
+      ],
+      "restart": "unless-stopped"
+    },
+    {
+      "service": "node-exporter",
+      "container_name": "node-exporter",
+      "project": "monitoring",
+      "image": "prom/node-exporter",
+      "status": "running",
+      "networks": [
+        "monitoring_default"
+      ],
+      "ports": [
+        "9100:9100/tcp"
+      ],
+      "restart": "unless-stopped"
+    }
+  ]
 }
