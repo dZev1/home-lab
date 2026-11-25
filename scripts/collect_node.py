@@ -182,11 +182,13 @@ def sanitize_ports(port_bindings: dict[str, Any] | None) -> list[str]:
 def get_docker_containers(
     exclude_projects: set[str],
     exclude_services: set[str],
+    include_stopped: bool = False,
 ) -> list[dict[str, Any]]:
     if not shutil.which("docker"):
         return []
 
-    rc, ids_out = run_cmd(["docker", "ps", "-aq"])
+    ps_cmd = ["docker", "ps", "-aq"] if include_stopped else ["docker", "ps", "-q"]
+    rc, ids_out = run_cmd(ps_cmd)
     if rc != 0 or not ids_out:
         return []
 
@@ -272,6 +274,7 @@ def collect_snapshot(
     role: str,
     exclude_projects: set[str],
     exclude_services: set[str],
+    include_stopped: bool = False,
 ) -> dict[str, Any]:
     return {
         "schema_version": 1,
@@ -288,7 +291,9 @@ def collect_snapshot(
         },
         "host_services": get_active_host_services(),
         "systemd_timers": get_custom_systemd_timers(),
-        "docker_containers": get_docker_containers(exclude_projects, exclude_services),
+        "docker_containers": get_docker_containers(
+            exclude_projects, exclude_services, include_stopped=include_stopped
+        ),
     }
 
 
@@ -317,6 +322,11 @@ def main() -> int:
         help="Service or container name(s) to exclude (repeatable or comma-separated).",
     )
     parser.add_argument(
+        "--include-stopped",
+        action="store_true",
+        help="Include exited/stopped containers (by default only running containers are collected).",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print collected JSON to stdout without writing any file.",
@@ -326,7 +336,13 @@ def main() -> int:
     safe_name = re.sub(r"[^a-zA-Z0-9._-]", "-", args.node_name.strip().lower())
     exclude_projects = parse_csv_set(args.exclude_project)
     exclude_services = parse_csv_set(args.exclude_service)
-    snapshot = collect_snapshot(safe_name, args.role.strip(), exclude_projects, exclude_services)
+    snapshot = collect_snapshot(
+        safe_name,
+        args.role.strip(),
+        exclude_projects,
+        exclude_services,
+        include_stopped=args.include_stopped,
+    )
     rendered = json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n"
 
     if args.dry_run:

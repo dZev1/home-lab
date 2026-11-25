@@ -157,6 +157,11 @@ def parse_node_snapshots(meta: dict[str, Any]) -> list[NodeSnapshot]:
 
         containers: list[ServiceEntry] = []
         for c in data.get("docker_containers") or []:
+            status = str(c.get("status", "unknown"))
+            restart = str(c.get("restart", "no"))
+            # Ignore one-off exited test containers (e.g. hello-world)
+            if status == "exited" and restart == "no":
+                continue
             svc_name = str(c.get("service") or c.get("container_name") or "unknown")
             container_name = str(c.get("container_name", svc_name))
             svc_meta = meta_services.get(svc_name) or meta_services.get(container_name) or {}
@@ -168,11 +173,11 @@ def parse_node_snapshots(meta: dict[str, Any]) -> list[NodeSnapshot]:
                     image=str(c.get("image", "unknown")),
                     networks=[str(n) for n in (c.get("networks") or ["default"])],
                     ports=[str(p) for p in (c.get("ports") or [])],
-                    restart=str(c.get("restart", "no")),
+                    restart=restart,
                     purpose=str(c.get("purpose") or svc_meta.get("purpose") or "—"),
                     docs=str(c.get("docs") or svc_meta.get("docs") or "—"),
                     source="live",
-                    status=str(c.get("status", "unknown")),
+                    status=status,
                 )
             )
 
@@ -197,7 +202,7 @@ def parse_node_snapshots(meta: dict[str, Any]) -> list[NodeSnapshot]:
     return snapshots
 
 
-def parse_compose_services(meta: dict[str, Any], default_node: str = "rpi4") -> list[ServiceEntry]:
+def parse_compose_services(meta: dict[str, Any], default_node: str = "rpi-4") -> list[ServiceEntry]:
     services: list[ServiceEntry] = []
     meta_services: dict[str, dict[str, str]] = meta.get("services") or {}
 
@@ -262,7 +267,9 @@ def merge_services(
     compose_services: list[ServiceEntry],
 ) -> list[ServiceEntry]:
     """Use live container data from node snapshots when available; fill remaining from compose files."""
+    per_node_agents = {"node-exporter"}
     live_nodes = {snap.node for snap in snapshots if snap.containers}
+    live_services = {c.name for snap in snapshots for c in snap.containers}
     compose_by_name = {s.name: s for s in compose_services}
     merged: list[ServiceEntry] = []
 
@@ -273,10 +280,14 @@ def merge_services(
                 c.docs = compose_by_name[c.name].docs
             merged.append(c)
 
-    # Keep static compose services for nodes that haven't pushed live container snapshots yet
+    # Keep static compose services for nodes that haven't pushed live container snapshots yet,
+    # skipping services already discovered live on another node (except per-node agents).
     for s in compose_services:
-        if s.node not in live_nodes:
-            merged.append(s)
+        if s.node in live_nodes:
+            continue
+        if s.name in live_services and s.name not in per_node_agents:
+            continue
+        merged.append(s)
 
     return sorted(merged, key=lambda s: (s.node.lower(), s.name.lower()))
 
@@ -346,8 +357,7 @@ def parse_prometheus() -> tuple[str, list[PrometheusJob]]:
 
 
 def mermaid_id(prefix: str, raw: str) -> str:
-    clean = re.sub(r"[^a-zA-Z0-9_]", "_", raw)
-    return f"{prefix}_{clean}"
+    return re.sub(r"[^a-zA-Z0-9_]", "_", f"{prefix}_{raw}")
 
 
 def build_mermaid_topology(
@@ -369,6 +379,8 @@ def build_mermaid_topology(
     )
 
     host_to_id: dict[str, str] = {}
+    node_host_to_id: dict[tuple[str, str], str] = {}
+    service_node: dict[str, str] = {}
 
     for node_key in node_keys:
         node_services = [s for s in services if s.node == node_key]
@@ -391,6 +403,9 @@ def build_mermaid_topology(
             sid = mermaid_id(f"svc_{node_key}", s.name)
             host_to_id.setdefault(s.name, sid)
             host_to_id.setdefault(s.container_name, sid)
+            node_host_to_id[(node_key, s.name)] = sid
+            node_host_to_id[(node_key, s.container_name)] = sid
+            service_node.setdefault(s.name, node_key)
             label = s.name if s.container_name == s.name else f"{s.name} ({s.container_name})"
             lines.append(f'    {sid}["{label}"]')
             for net in s.networks:
@@ -411,24 +426,31 @@ def build_mermaid_topology(
 
         lines.append("  end")
 
+    def resolve_target(source_node: str | None, host: str) -> str | None:
+        if source_node and (source_node, host) in node_host_to_id:
+            return node_host_to_id[(source_node, host)]
+        return host_to_id.get(host)
+
     # NGINX reverse proxy edges
     nginx_id = host_to_id.get("nginx")
+    nginx_node = service_node.get("nginx")
     if nginx_id and nginx_routes:
         for route in nginx_routes:
-            target_id = host_to_id.get(route.upstream_host)
+            target_id = resolve_target(nginx_node, route.upstream_host)
             if target_id:
                 host_label = route.server_name.replace("${Domain}", "domain")
                 lines.append(f'  {nginx_id} -. "HTTPS {host_label}" .-> {target_id}')
 
     # Prometheus scrape edges
     prom_id = host_to_id.get("prometheus")
+    prom_node = service_node.get("prometheus")
     if prom_id and prom_jobs:
         for job in prom_jobs:
             for target in job.targets:
                 host = target.split(":")[0]
                 if host in ("localhost", "127.0.0.1"):
                     continue
-                target_id = host_to_id.get(host)
+                target_id = resolve_target(prom_node, host)
                 if target_id:
                     lines.append(f'  {prom_id} -. "scrape" .-> {target_id}')
 

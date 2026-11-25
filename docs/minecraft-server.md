@@ -2,7 +2,7 @@
 
 ## Specifications
 
-- Operating System: NixOS
+- Operating System: Debian GNU/Linux 13 (trixie)
 - Server: Fabric Server
 - JVM RAM: 6 GB
 - Optimization mods: Lithium, ScalableLux, Chunky, Carpet
@@ -21,7 +21,7 @@
 
 - Dynamic IP problem (ISP changes IP weekly)
 - ddns-updater solution -> domain of my server
-- For the DDNS detail and a related reliability incident, check [this link.](networking)
+- For the DDNS detail and a related reliability incident, check [this link](networking.md).
 
 ## Backups
 
@@ -66,27 +66,30 @@
 - Lesson learned: datapacks are user-made and prone to bugs, knowing
   how to debug them matters.
 
-## NixOS Integration
+## Systemd Automation
 
-- Automatic backups everyday at 6 AM making use of `systemd.service` + `systemd.timer`.
+- Automatic backups every day at 6 AM using a `systemd` service and timer (`minecraft-backup.service` + `minecraft-backup.timer`).
 
-```nix
-systemd.services.minecraft-backup = {
-  description = "Daily backup of the minecraft server";
-  path = [ pkgs.bash pkgs.gnutar pkgs.tmux ];
-  serviceConfig = {
-    Type = "oneshot";
-    User = "<USER>";
-    ExecStart = "/home/<USER>/scripts/minecraft-backup.sh";
-  };
-};
+```ini
+# /etc/systemd/system/minecraft-backup.service
+[Unit]
+Description=Daily backup of the Minecraft server
 
-systemd.timers.minecraft-backup = {
-  wantedBy = [ "timers.target" ];
-  partOf = [ "minecraft-backup.service" ];
-  timerConfig = {
-    OnCalendar = "*-*-* 06:00:00";
-    Persistent = true;
-  };
-};
+[Service]
+Type=oneshot
+User=<USER>
+ExecStart=/home/<USER>/scripts/minecraft-backup.sh
+```
+
+```ini
+# /etc/systemd/system/minecraft-backup.timer
+[Unit]
+Description=Run Minecraft server backup daily at 6 AM
+
+[Timer]
+OnCalendar=*-*-* 06:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
 ```

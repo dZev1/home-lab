@@ -6,7 +6,7 @@
 #   homelab.docs="[docs](docs/networking.md)"
 
 nodes:
-  rpi4:
+  rpi-4:
     display_name: "Raspberry Pi 4 (4GB)"
     role: "Networking, APIs, Observability & Automation"
   deskmini:
@@ -40,7 +40,7 @@ services:
     docs: "—"
   kavita:
     purpose: "Self-hosted e-book & university notes reader"
-    docs: "[compose](docker-compose/kavita/compose.yaml)"
+    docs: "[docs](docs/networking.md)"
   n8n:
     purpose: "Workflow automation"
     docs: "[compose](docker-compose/n8n/compose.yaml)"
