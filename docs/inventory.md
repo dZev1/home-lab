@@ -6,7 +6,7 @@
 
 | Metric | Count |
 | ------ | ----- |
-| Physical Nodes | 4 (2 synced live) |
+| Physical Nodes | 4 (3 synced live) |
 | Docker Services | 13 |
 | Docker Networks | 4 (`bridge`, `default (bridge)`, `dragored`, `proxy_net`) |
 | NGINX Reverse Proxy Routes | 4 |
@@ -17,7 +17,7 @@
 
 | Node | Role | OS / Arch | Hardware | Host Services |
 | ---- | ---- | --------- | -------- | ------------- |
-| **Asrock Deskmini 110** (`deskmini`) | Minecraft Server & Cross-Server Backups | `Debian` *(pending sync)* | — | — |
+| **Asrock Deskmini 110** (`deskmini`) | Backups and Minecraft | `Debian GNU/Linux 13 (trixie)` (`x86_64`) | 2c · 11.4 GB RAM · 431.5 GB disk | `Docker`, `OpenSSH`, `UFW Firewall` |
 | **Mac Mini** (`mac-mini`) | Media Server | `Debian GNU/Linux 13 (trixie)` (`x86_64`) | 4c · 7.6 GB RAM · 210.3 GB disk | `Docker`, `Jellyfin`, `OpenSSH`, `WireGuard` |
 | **rpi-4** (`rpi-4`) | Networking node | `Debian GNU/Linux 13 (trixie)` (`aarch64`) | 4c · 3.7 GB RAM · 916.3 GB disk | `Docker`, `OpenSSH`, `Tailscale` |
 | **Raspberry Pi 4 (4GB)** (`rpi4`) | Networking, APIs, Observability & Automation | `Debian` *(pending sync)* | — | — |
@@ -26,8 +26,10 @@
 
 ```mermaid
 flowchart LR
-  subgraph node_deskmini["Asrock Deskmini 110 (Debian)"]
-    info_deskmini["Minecraft Server & Cross-Server Backups"]
+  subgraph node_deskmini["Asrock Deskmini 110 — Debian GNU/Linux 13 (trixie)"]
+    hs_deskmini_0["host: Docker"]
+    hs_deskmini_1["host: OpenSSH"]
+    hs_deskmini_2["host: UFW Firewall"]
   end
   subgraph node_mac_mini["Mac Mini — Debian GNU/Linux 13 (trixie)"]
     hs_mac-mini_0["host: Docker"]
