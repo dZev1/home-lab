@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "node": "rpi4",
+  "role": "Networking",
+  "system": {
+    "os": "Debian GNU/Linux 13 (trixie)",
+    "kernel": "6.18.60+rpt-rpi-v8",
+    "arch": "aarch64",
+    "cpu": "Raspberry Pi 4 Model B Rev 1.1",
+    "cpu_cores": 4,
+    "ram_gb": 3.7,
+    "root_disk_gb": 916.3
+  },
+  "host_services": [
+    "Docker",
+    "OpenSSH",
+    "Tailscale"
+  ],
+  "systemd_timers": [
+    {
+      "name": "homelab-docs",
+      "schedule": "*-*-* 04:00:00",
+      "description": "Daily Home Lab inventory sync",
+      "enabled": "enabled"
+    }
+  ],
+  "docker_containers": [
+    {
+      "service": "adguard-home",
+      "container_name": "adguard",
+      "project": "adguard",
+      "image": "adguard/adguardhome",
+      "status": "running",
+      "networks": [
+        "proxy_net"
+      ],
+      "ports": [
+        "3000:3000/tcp",
+        "53:53/tcp",
+        "53:53/udp",
+        "784:784/udp",
+        "853:853/udp"
+      ],
+      "restart": "unless-stopped"
+    },
+    {
+      "service": "character-gallery-api",
+      "container_name": "character-gallery-api",
+      "project": "character-gallery",
+      "image": "character-gallery-api:latest",
+      "status": "running",
+      "networks": [
+        "dragored"
+      ],
+      "ports": [
+        "8080:8080/tcp"
+      ],
+      "restart": "unless-stopped"
+    },
+    {
+      "service": "cloudflared",
+      "container_name": "cloudflare-tunnel",
+      "project": "cloudflared",
+      "image": "cloudflare/cloudflared:latest",
+      "status": "running",
+      "networks": [
+        "dragored"
+      ],
+      "ports": [],
+      "restart": "unless-stopped"
+    },
+    {
+      "service": "ddns-updater",
+      "container_name": "ddns-updater",
+      "project": "ddns-updater",
+      "image": "ghcr.io/qdm12/ddns-updater",
+      "status": "running",
+      "networks": [
+        "bridge"
+      ],
+      "ports": [
+        "8050:8000/tcp"
+      ],
+      "restart": "always"
+    },
+    {
+      "service": "grafana",
+      "container_name": "grafana",
+      "project": "monitoring",
+      "image": "grafana/grafana-oss",
+      "status": "running",
+      "networks": [
+        "proxy_net"
+      ],
+      "ports": [],
+      "restart": "unless-stopped"
+    },
+    {
+      "service": "nginx",
+      "container_name": "nginx-proxy",
+      "project": "nginx",
+      "image": "nginx:1.30.7-alpine3.24",
+      "status": "running",
+      "networks": [
+        "proxy_net"
+      ],
+      "ports": [
+        "443:443/tcp",
+        "443:443/udp",
+        "80:80/tcp"
+      ],
+      "restart": "no"
+    },
+    {
+      "service": "node-exporter",
+      "container_name": "node-exporter",
+      "project": "monitoring",
+      "image": "prom/node-exporter",
+      "status": "running",
+      "networks": [
+        "proxy_net"
+      ],
+      "ports": [],
+      "restart": "unless-stopped"
+    },
+    {
+      "service": "portainer",
+      "container_name": "portainer",
+      "project": "",
+      "image": "portainer/portainer-ce:lts",
+      "status": "running",
+      "networks": [
+        "bridge"
+      ],
+      "ports": [
+        "8000:8000/tcp",
+        "9443:9443/tcp"
+      ],
+      "restart": "always"
+    },
+    {
+      "service": "prometheus",
+      "container_name": "prometheus",
+      "project": "monitoring",
+      "image": "prom/prometheus:main",
+      "status": "running",
+      "networks": [
+        "dragored",
+        "proxy_net"
+      ],
+      "ports": [],
+      "restart": "unless-stopped"
+    },
+    {
+      "service": "vaultwarden",
+      "container_name": "vaultwarden",
+      "project": "vaultwarden",
+      "image": "vaultwarden/server:testing",
+      "status": "running",
+      "networks": [
+        "proxy_net"
+      ],
+      "ports": [],
+      "restart": "always"
+    }
+  ]
+}
