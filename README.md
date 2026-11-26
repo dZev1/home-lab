@@ -16,6 +16,7 @@ This lab runs across three physical Linux machines:
 | **Asrock Deskmini 110** (`deskmini`) | Backups and Minecraft | `Debian GNU/Linux 13 (trixie)` (`x86_64`) | 2c · 11.4 GB RAM · 431.5 GB disk | `Docker`, `OpenSSH`, `UFW Firewall` |
 | **Mac Mini** (`mac-mini`) | Media Server | `Debian GNU/Linux 13 (trixie)` (`x86_64`) | 4c · 7.6 GB RAM · 210.3 GB disk | `Docker`, `Jellyfin`, `OpenSSH`, `WireGuard` |
 | **Raspberry Pi 4 (4GB)** (`rpi-4`) | Networking node | `Debian GNU/Linux 13 (trixie)` (`aarch64`) | 4c · 3.7 GB RAM · 916.3 GB disk | `Docker`, `OpenSSH`, `Tailscale` |
+| **rpi4** (`rpi4`) | Networking | `Debian GNU/Linux 13 (trixie)` (`aarch64`) | 4c · 3.7 GB RAM · 916.3 GB disk | `Docker`, `OpenSSH`, `Tailscale` |
 <!-- AUTO:NODES:END -->
 
 The workload is split by resource profile: the Pi's 4GB of RAM comfortably handles lightweight containerized services (mostly I/O-bound: DNS, proxying, APIs, observability), the Deskmini (Debian) isolates the Minecraft server and cross-server backups, and the Mac Mini (Debian) acts as a dedicated Media & Git Server (Forgejo, Jellyfin, Kavita, etc.).
@@ -63,41 +64,54 @@ flowchart LR
     tm_mac_mini_0["timer: homelab-docs (*-*-* 04:00:00)"]
   end
   subgraph node_rpi_4["Raspberry Pi 4 (4GB) — Debian GNU/Linux 13 (trixie)"]
-    net_rpi_4_bridge{{"bridge"}}
     net_rpi_4_dragored{{"dragored"}}
     net_rpi_4_proxy_net{{"proxy_net"}}
-    svc_rpi_4_adguard_home["adguard-home (adguard)"]
-    svc_rpi_4_adguard_home --- net_rpi_4_proxy_net
-    svc_rpi_4_character_gallery_api["character-gallery-api"]
-    svc_rpi_4_character_gallery_api --- net_rpi_4_dragored
-    svc_rpi_4_character_gallery_api --- net_rpi_4_proxy_net
-    svc_rpi_4_cloudflared["cloudflared (cloudflare-tunnel)"]
-    svc_rpi_4_cloudflared --- net_rpi_4_dragored
-    svc_rpi_4_ddns_updater["ddns-updater"]
-    svc_rpi_4_ddns_updater --- net_rpi_4_bridge
-    svc_rpi_4_grafana["grafana"]
-    svc_rpi_4_grafana --- net_rpi_4_proxy_net
     svc_rpi_4_n8n["n8n"]
     svc_rpi_4_n8n --- net_rpi_4_dragored
-    svc_rpi_4_nginx["nginx (nginx-proxy)"]
-    svc_rpi_4_nginx --- net_rpi_4_proxy_net
     svc_rpi_4_node_exporter["node-exporter"]
     svc_rpi_4_node_exporter --- net_rpi_4_proxy_net
     svc_rpi_4_postgres_exporter["postgres-exporter"]
     svc_rpi_4_postgres_exporter --- net_rpi_4_proxy_net
     svc_rpi_4_postgres_exporter --- net_rpi_4_dragored
-    svc_rpi_4_prometheus["prometheus"]
-    svc_rpi_4_prometheus --- net_rpi_4_proxy_net
     hs_rpi_4_1["host: OpenSSH"]
     hs_rpi_4_2["host: Tailscale"]
   end
-  svc_rpi_4_nginx -. "HTTPS adguard.domain" .-> svc_rpi_4_adguard_home
-  svc_rpi_4_nginx -. "HTTPS grafana.domain" .-> svc_rpi_4_grafana
-  svc_rpi_4_nginx -. "HTTPS prometheus.domain" .-> svc_rpi_4_prometheus
-  svc_rpi_4_nginx -. "HTTPS kavita.domain" .-> svc_mac_mini_kavita
-  svc_rpi_4_prometheus -. "scrape" .-> svc_rpi_4_node_exporter
-  svc_rpi_4_prometheus -. "scrape" .-> svc_rpi_4_character_gallery_api
-  svc_rpi_4_prometheus -. "scrape" .-> svc_rpi_4_postgres_exporter
+  subgraph node_rpi4["rpi4 — Debian GNU/Linux 13 (trixie)"]
+    net_rpi4_bridge{{"bridge"}}
+    net_rpi4_dragored{{"dragored"}}
+    net_rpi4_proxy_net{{"proxy_net"}}
+    svc_rpi4_adguard_home["adguard-home (adguard)"]
+    svc_rpi4_adguard_home --- net_rpi4_proxy_net
+    svc_rpi4_character_gallery_api["character-gallery-api"]
+    svc_rpi4_character_gallery_api --- net_rpi4_dragored
+    svc_rpi4_cloudflared["cloudflared (cloudflare-tunnel)"]
+    svc_rpi4_cloudflared --- net_rpi4_dragored
+    svc_rpi4_ddns_updater["ddns-updater"]
+    svc_rpi4_ddns_updater --- net_rpi4_bridge
+    svc_rpi4_grafana["grafana"]
+    svc_rpi4_grafana --- net_rpi4_proxy_net
+    svc_rpi4_nginx["nginx (nginx-proxy)"]
+    svc_rpi4_nginx --- net_rpi4_proxy_net
+    svc_rpi4_node_exporter["node-exporter"]
+    svc_rpi4_node_exporter --- net_rpi4_proxy_net
+    svc_rpi4_portainer["portainer"]
+    svc_rpi4_portainer --- net_rpi4_bridge
+    svc_rpi4_prometheus["prometheus"]
+    svc_rpi4_prometheus --- net_rpi4_dragored
+    svc_rpi4_prometheus --- net_rpi4_proxy_net
+    svc_rpi4_vaultwarden["vaultwarden"]
+    svc_rpi4_vaultwarden --- net_rpi4_proxy_net
+    hs_rpi4_1["host: OpenSSH"]
+    hs_rpi4_2["host: Tailscale"]
+    tm_rpi4_0["timer: homelab-docs (*-*-* 04:00:00)"]
+  end
+  svc_rpi4_nginx -. "HTTPS adguard.domain" .-> svc_rpi4_adguard_home
+  svc_rpi4_nginx -. "HTTPS grafana.domain" .-> svc_rpi4_grafana
+  svc_rpi4_nginx -. "HTTPS prometheus.domain" .-> svc_rpi4_prometheus
+  svc_rpi4_nginx -. "HTTPS kavita.domain" .-> svc_mac_mini_kavita
+  svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_node_exporter
+  svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_character_gallery_api
+  svc_rpi4_prometheus -. "scrape" .-> svc_rpi_4_postgres_exporter
 ```
 
 </details>
@@ -114,16 +128,19 @@ flowchart LR
 | `mac-mini` | `forgejo` | `codeberg.org/forgejo/forgejo:15` | `forgejo_default` | Self-hosted Git forge | — |
 | `mac-mini` | `kavita` | `jvmilazz0/kavita:latest` | `kavita_default` | Self-hosted e-book & university notes reader | [docs](docs/networking.md) |
 | `mac-mini` | `node-exporter` | `prom/node-exporter` | `monitoring_default` | Host OS & hardware metrics exporter | [docs](docs/monitoring.md) |
-| `rpi-4` | `adguard-home` | `adguard/adguardhome` | `proxy_net` | Internal DNS + ad blocking (DoQ) | [docs](docs/networking.md) |
-| `rpi-4` | `character-gallery-api` | `character-gallery-api:latest` | `dragored`, `proxy_net` | RPG characters CRUD API (Go) | [repo](https://github.com/dZev1/character-gallery-api) |
-| `rpi-4` | `cloudflared` | `cloudflare/cloudflared:latest` | `dragored` | Selective public exposure without open ports | [docs](docs/networking.md) |
-| `rpi-4` | `ddns-updater` | `ghcr.io/qdm12/ddns-updater` | `bridge` | Dynamic DNS updater for Minecraft server | [docs](docs/networking.md) |
-| `rpi-4` | `grafana` | `grafana/grafana-oss` | `proxy_net` | Dashboards & observability UI | [docs](docs/monitoring.md) |
 | `rpi-4` | `n8n` | `n8nio/n8n:latest` | `dragored` | Workflow automation | [compose](docker-compose/n8n/compose.yaml) |
-| `rpi-4` | `nginx` | `nginx:stable-alpine3.24-perl` | `proxy_net` | TLS reverse proxy for internal services | [docs](docs/networking.md) |
 | `rpi-4` | `node-exporter` | `prom/node-exporter` | `proxy_net` | Host OS & hardware metrics exporter | [docs](docs/monitoring.md) |
 | `rpi-4` | `postgres-exporter` | `prometheuscommunity/postgres-exporter` | `proxy_net`, `dragored` | PostgreSQL metrics exporter for Prometheus | [docs](docs/monitoring.md) |
-| `rpi-4` | `prometheus` | `prom/prometheus:main` | `proxy_net` | Time-series metrics collection | [docs](docs/monitoring.md) |
+| `rpi4` | `adguard-home` | `adguard/adguardhome` | `proxy_net` | Internal DNS + ad blocking (DoQ) | [docs](docs/networking.md) |
+| `rpi4` | `character-gallery-api` | `character-gallery-api:latest` | `dragored` | RPG characters CRUD API (Go) | [repo](https://github.com/dZev1/character-gallery-api) |
+| `rpi4` | `cloudflared` | `cloudflare/cloudflared:latest` | `dragored` | Selective public exposure without open ports | [docs](docs/networking.md) |
+| `rpi4` | `ddns-updater` | `ghcr.io/qdm12/ddns-updater` | `bridge` | Dynamic DNS updater for Minecraft server | [docs](docs/networking.md) |
+| `rpi4` | `grafana` | `grafana/grafana-oss` | `proxy_net` | Dashboards & observability UI | [docs](docs/monitoring.md) |
+| `rpi4` | `nginx` | `nginx:1.30.7-alpine3.24` | `proxy_net` | TLS reverse proxy for internal services | [docs](docs/networking.md) |
+| `rpi4` | `node-exporter` | `prom/node-exporter` | `proxy_net` | Host OS & hardware metrics exporter | [docs](docs/monitoring.md) |
+| `rpi4` | `portainer` | `portainer/portainer-ce:lts` | `bridge` | — | — |
+| `rpi4` | `prometheus` | `prom/prometheus:main` | `dragored`, `proxy_net` | Time-series metrics collection | [docs](docs/monitoring.md) |
+| `rpi4` | `vaultwarden` | `vaultwarden/server:testing` | `proxy_net` | — | — |
 | `deskmini` | `minecraft-server` | `Fabric, Debian (systemd backups)` | `host` | Private Minecraft server for friends | [docs](docs/minecraft-server.md) |
 
 > *Auto-generated from `nodes/*.json` and `docker-compose/*/compose.yaml` via `scripts/generate_docs.py`. See [`docs/inventory.md`](docs/inventory.md) for full hardware specs, ports, NGINX routes, Prometheus targets, and systemd timers.*

@@ -6,12 +6,12 @@
 
 | Metric | Count |
 | ------ | ----- |
-| Physical Nodes | 3 (3 synced live) |
-| Docker Services | 16 |
+| Physical Nodes | 4 (4 synced live) |
+| Docker Services | 19 |
 | Docker Networks | 7 (`bridge`, `dragored`, `forgejo_default`, `kavita_default`, `monitoring_default`, `outerwilds`, `proxy_net`) |
 | NGINX Reverse Proxy Routes | 4 |
 | Prometheus Scrape Jobs | 4 (`30s` interval) |
-| Custom Systemd Timers | 2 |
+| Custom Systemd Timers | 3 |
 
 ## Nodes & Hardware
 
@@ -20,6 +20,7 @@
 | **Asrock Deskmini 110** (`deskmini`) | Backups and Minecraft | `Debian GNU/Linux 13 (trixie)` (`x86_64`) | 2c · 11.4 GB RAM · 431.5 GB disk | `Docker`, `OpenSSH`, `UFW Firewall` |
 | **Mac Mini** (`mac-mini`) | Media Server | `Debian GNU/Linux 13 (trixie)` (`x86_64`) | 4c · 7.6 GB RAM · 210.3 GB disk | `Docker`, `Jellyfin`, `OpenSSH`, `WireGuard` |
 | **Raspberry Pi 4 (4GB)** (`rpi-4`) | Networking node | `Debian GNU/Linux 13 (trixie)` (`aarch64`) | 4c · 3.7 GB RAM · 916.3 GB disk | `Docker`, `OpenSSH`, `Tailscale` |
+| **rpi4** (`rpi4`) | Networking | `Debian GNU/Linux 13 (trixie)` (`aarch64`) | 4c · 3.7 GB RAM · 916.3 GB disk | `Docker`, `OpenSSH`, `Tailscale` |
 
 ## Network & Service Topology
 
@@ -54,41 +55,54 @@ flowchart LR
     tm_mac_mini_0["timer: homelab-docs (*-*-* 04:00:00)"]
   end
   subgraph node_rpi_4["Raspberry Pi 4 (4GB) — Debian GNU/Linux 13 (trixie)"]
-    net_rpi_4_bridge{{"bridge"}}
     net_rpi_4_dragored{{"dragored"}}
     net_rpi_4_proxy_net{{"proxy_net"}}
-    svc_rpi_4_adguard_home["adguard-home (adguard)"]
-    svc_rpi_4_adguard_home --- net_rpi_4_proxy_net
-    svc_rpi_4_character_gallery_api["character-gallery-api"]
-    svc_rpi_4_character_gallery_api --- net_rpi_4_dragored
-    svc_rpi_4_character_gallery_api --- net_rpi_4_proxy_net
-    svc_rpi_4_cloudflared["cloudflared (cloudflare-tunnel)"]
-    svc_rpi_4_cloudflared --- net_rpi_4_dragored
-    svc_rpi_4_ddns_updater["ddns-updater"]
-    svc_rpi_4_ddns_updater --- net_rpi_4_bridge
-    svc_rpi_4_grafana["grafana"]
-    svc_rpi_4_grafana --- net_rpi_4_proxy_net
     svc_rpi_4_n8n["n8n"]
     svc_rpi_4_n8n --- net_rpi_4_dragored
-    svc_rpi_4_nginx["nginx (nginx-proxy)"]
-    svc_rpi_4_nginx --- net_rpi_4_proxy_net
     svc_rpi_4_node_exporter["node-exporter"]
     svc_rpi_4_node_exporter --- net_rpi_4_proxy_net
     svc_rpi_4_postgres_exporter["postgres-exporter"]
     svc_rpi_4_postgres_exporter --- net_rpi_4_proxy_net
     svc_rpi_4_postgres_exporter --- net_rpi_4_dragored
-    svc_rpi_4_prometheus["prometheus"]
-    svc_rpi_4_prometheus --- net_rpi_4_proxy_net
     hs_rpi_4_1["host: OpenSSH"]
     hs_rpi_4_2["host: Tailscale"]
   end
-  svc_rpi_4_nginx -. "HTTPS adguard.domain" .-> svc_rpi_4_adguard_home
-  svc_rpi_4_nginx -. "HTTPS grafana.domain" .-> svc_rpi_4_grafana
-  svc_rpi_4_nginx -. "HTTPS prometheus.domain" .-> svc_rpi_4_prometheus
-  svc_rpi_4_nginx -. "HTTPS kavita.domain" .-> svc_mac_mini_kavita
-  svc_rpi_4_prometheus -. "scrape" .-> svc_rpi_4_node_exporter
-  svc_rpi_4_prometheus -. "scrape" .-> svc_rpi_4_character_gallery_api
-  svc_rpi_4_prometheus -. "scrape" .-> svc_rpi_4_postgres_exporter
+  subgraph node_rpi4["rpi4 — Debian GNU/Linux 13 (trixie)"]
+    net_rpi4_bridge{{"bridge"}}
+    net_rpi4_dragored{{"dragored"}}
+    net_rpi4_proxy_net{{"proxy_net"}}
+    svc_rpi4_adguard_home["adguard-home (adguard)"]
+    svc_rpi4_adguard_home --- net_rpi4_proxy_net
+    svc_rpi4_character_gallery_api["character-gallery-api"]
+    svc_rpi4_character_gallery_api --- net_rpi4_dragored
+    svc_rpi4_cloudflared["cloudflared (cloudflare-tunnel)"]
+    svc_rpi4_cloudflared --- net_rpi4_dragored
+    svc_rpi4_ddns_updater["ddns-updater"]
+    svc_rpi4_ddns_updater --- net_rpi4_bridge
+    svc_rpi4_grafana["grafana"]
+    svc_rpi4_grafana --- net_rpi4_proxy_net
+    svc_rpi4_nginx["nginx (nginx-proxy)"]
+    svc_rpi4_nginx --- net_rpi4_proxy_net
+    svc_rpi4_node_exporter["node-exporter"]
+    svc_rpi4_node_exporter --- net_rpi4_proxy_net
+    svc_rpi4_portainer["portainer"]
+    svc_rpi4_portainer --- net_rpi4_bridge
+    svc_rpi4_prometheus["prometheus"]
+    svc_rpi4_prometheus --- net_rpi4_dragored
+    svc_rpi4_prometheus --- net_rpi4_proxy_net
+    svc_rpi4_vaultwarden["vaultwarden"]
+    svc_rpi4_vaultwarden --- net_rpi4_proxy_net
+    hs_rpi4_1["host: OpenSSH"]
+    hs_rpi4_2["host: Tailscale"]
+    tm_rpi4_0["timer: homelab-docs (*-*-* 04:00:00)"]
+  end
+  svc_rpi4_nginx -. "HTTPS adguard.domain" .-> svc_rpi4_adguard_home
+  svc_rpi4_nginx -. "HTTPS grafana.domain" .-> svc_rpi4_grafana
+  svc_rpi4_nginx -. "HTTPS prometheus.domain" .-> svc_rpi4_prometheus
+  svc_rpi4_nginx -. "HTTPS kavita.domain" .-> svc_mac_mini_kavita
+  svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_node_exporter
+  svc_rpi4_prometheus -. "scrape" .-> svc_rpi4_character_gallery_api
+  svc_rpi4_prometheus -. "scrape" .-> svc_rpi_4_postgres_exporter
 ```
 
 ## Docker Services
@@ -101,16 +115,19 @@ flowchart LR
 | `mac-mini` | `forgejo` | `forgejo` | `codeberg.org/forgejo/forgejo:15` | `forgejo_default` | `222:22/tcp`, `3000:3000/tcp` | `always` | live (`running`) |
 | `mac-mini` | `kavita` | `kavita-server` | `jvmilazz0/kavita:latest` | `kavita_default` | `5000:5000/tcp` | `unless-stopped` | live (`running`) |
 | `mac-mini` | `node-exporter` | `node-exporter` | `prom/node-exporter` | `monitoring_default` | `9100:9100/tcp` | `unless-stopped` | live (`running`) |
-| `rpi-4` | `adguard-home` | `adguard` | `adguard/adguardhome` | `proxy_net` | `53:53/tcp`, `53:53/udp`, `784:784/udp`, `853:853/udp`, `3000:3000/tcp` | `unless-stopped` | [compose](../docker-compose/adguard/compose.yaml) |
-| `rpi-4` | `character-gallery-api` | `character-gallery-api` | `character-gallery-api:latest` | `dragored`, `proxy_net` | — | `unless-stopped` | [compose](../docker-compose/character-gallery/compose.yaml) |
-| `rpi-4` | `cloudflared` | `cloudflare-tunnel` | `cloudflare/cloudflared:latest` | `dragored` | — | `unless-stopped` | [compose](../docker-compose/cloudflared/compose.yaml) |
-| `rpi-4` | `ddns-updater` | `ddns-updater` | `ghcr.io/qdm12/ddns-updater` | `bridge` | `8050:8000/tcp` | `always` | [compose](../docker-compose/ddns-updater/compose.yaml) |
-| `rpi-4` | `grafana` | `grafana` | `grafana/grafana-oss` | `proxy_net` | — | `unless-stopped` | [compose](../docker-compose/monitoring/compose.yaml) |
 | `rpi-4` | `n8n` | `n8n` | `n8nio/n8n:latest` | `dragored` | `5678:5678` | `unless-stopped` | [compose](../docker-compose/n8n/compose.yaml) |
-| `rpi-4` | `nginx` | `nginx-proxy` | `nginx:stable-alpine3.24-perl` | `proxy_net` | `80:80/tcp`, `443:443/udp`, `443:443/tcp` | `no` | [compose](../docker-compose/nginx/compose.yaml) |
 | `rpi-4` | `node-exporter` | `node-exporter` | `prom/node-exporter` | `proxy_net` | — | `unless-stopped` | [compose](../docker-compose/monitoring/compose.yaml) |
 | `rpi-4` | `postgres-exporter` | `postgres-exporter` | `prometheuscommunity/postgres-exporter` | `proxy_net`, `dragored` | — | `unless-stopped` | [compose](../docker-compose/monitoring/compose.yaml) |
-| `rpi-4` | `prometheus` | `prometheus` | `prom/prometheus:main` | `proxy_net` | — | `unless-stopped` | [compose](../docker-compose/monitoring/compose.yaml) |
+| `rpi4` | `adguard-home` | `adguard` | `adguard/adguardhome` | `proxy_net` | `3000:3000/tcp`, `53:53/tcp`, `53:53/udp`, `784:784/udp`, `853:853/udp` | `unless-stopped` | live (`running`) |
+| `rpi4` | `character-gallery-api` | `character-gallery-api` | `character-gallery-api:latest` | `dragored` | `8080:8080/tcp` | `unless-stopped` | live (`running`) |
+| `rpi4` | `cloudflared` | `cloudflare-tunnel` | `cloudflare/cloudflared:latest` | `dragored` | — | `unless-stopped` | live (`running`) |
+| `rpi4` | `ddns-updater` | `ddns-updater` | `ghcr.io/qdm12/ddns-updater` | `bridge` | `8050:8000/tcp` | `always` | live (`running`) |
+| `rpi4` | `grafana` | `grafana` | `grafana/grafana-oss` | `proxy_net` | — | `unless-stopped` | live (`running`) |
+| `rpi4` | `nginx` | `nginx-proxy` | `nginx:1.30.7-alpine3.24` | `proxy_net` | `443:443/tcp`, `443:443/udp`, `80:80/tcp` | `no` | live (`running`) |
+| `rpi4` | `node-exporter` | `node-exporter` | `prom/node-exporter` | `proxy_net` | — | `unless-stopped` | live (`running`) |
+| `rpi4` | `portainer` | `portainer` | `portainer/portainer-ce:lts` | `bridge` | `8000:8000/tcp`, `9443:9443/tcp` | `always` | live (`running`) |
+| `rpi4` | `prometheus` | `prometheus` | `prom/prometheus:main` | `dragored`, `proxy_net` | — | `unless-stopped` | live (`running`) |
+| `rpi4` | `vaultwarden` | `vaultwarden` | `vaultwarden/server:testing` | `proxy_net` | — | `always` | live (`running`) |
 
 ## NGINX Reverse Proxy Routes
 
@@ -136,3 +153,4 @@ flowchart LR
 | ---- | ----- | -------- | ------- | ----------- |
 | `deskmini` | `homelab-docs` | `*-*-* 04:00:00` | `enabled` | Daily Home Lab inventory sync |
 | `mac-mini` | `homelab-docs` | `*-*-* 04:00:00` | `enabled` | Daily Home Lab inventory sync |
+| `rpi4` | `homelab-docs` | `*-*-* 04:00:00` | `enabled` | Daily Home Lab inventory sync |
